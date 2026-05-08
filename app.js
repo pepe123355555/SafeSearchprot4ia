@@ -1,8 +1,5 @@
-// ⚠️ ATENÇÃO: Coloque a sua chave de API do Google AI Studio aqui dentro das aspas!
-const API_KEY = "Api-Key";
-
 // =========================
-// 🌐 SUAS FONTES + YOUTUBE ATUALIZADOS
+// 🌐 SUAS FONTES + YOUTUBE
 // =========================
 const fontesMap = {
     matematica: [
@@ -86,7 +83,7 @@ const nomes = {
 };
 
 // =========================
-// 🧠 FUNÇÃO PRINCIPAL (CONEXÃO COM A IA)
+// 🧠 FUNÇÃO PRINCIPAL (CONECTADA AO SEU SERVIDOR)
 // =========================
 async function buscar() {
     let texto = document.getElementById("pesquisa").value;
@@ -105,44 +102,30 @@ async function buscar() {
     `;
 
     try {
-        const prompt = `Você é uma IA de um sistema chamado "Safe Search" que combate fake news.
-        Analise esta pesquisa do usuário: "${texto}".
-        
-        Sua tarefa é retornar APENAS um objeto JSON válido contendo exatamente estas 4 chaves:
-        1. "categoria": Escolha apenas UMA destas opções (matematica, noticias, historia, ciencia, saude, tecnologia, geografia, portugues, esportes, religiao, curiosidades, geral).
-        2. "nivelSuspeita": Um número de 0 a 3 (0 = busca normal/segura, 1 = um pouco estranho/exagerado, 2 = muito suspeito, 3 = alta chance de fake news ou impossível).
-        3. "motivo": Uma frase curta (máximo 10 palavras) explicando o nível de suspeita escolhido.
-        4. "resultadoMatematica": SE a pesquisa for uma conta matemática clara, resolva e coloque a resposta aqui. ATENÇÃO: no formato brasileiro, o símbolo "." (ponto) significa MULTIPLICAÇÃO, e o símbolo ":" (dois pontos) significa DIVISÃO. Considere também + (soma), - (subtração), * (multiplicação), / (divisão) e ^ (potência). Caso NÃO seja uma conta matemática, coloque null.`;
-
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY.trim()}`;
-
-        const response = await fetch(url, {
+        // 👇 Agora o seu Front-End manda a pesquisa para o SEU servidor Node.js!
+        const response = await fetch("http://localhost:3000/api/buscar", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: { responseMimeType: "application/json" }
-            })
+            body: JSON.stringify({ texto: texto })
         });
 
-        const data = await response.json();
+        const dadosIA = await response.json();
 
+        // Se o servidor avisar que deu erro, a gente joga pro catch lá embaixo
         if (!response.ok) {
-            console.error("🚨 Erro na resposta do Google:", data);
-            throw new Error(data.error?.message || "Erro na comunicação com a IA.");
+            throw new Error(dadosIA.erro || "Erro na comunicação com o servidor.");
         }
 
-        let textoIA = data.candidates[0].content.parts[0].text;
-        const respostaIA = JSON.parse(textoIA);
-
-        exibirResultadosIA(respostaIA, texto);
+        // Se deu tudo certo, manda exibir na tela!
+        exibirResultadosIA(dadosIA, texto);
 
     } catch (erroSistema) {
         console.error("Erro capturado:", erroSistema);
         document.getElementById("resultado").innerHTML = `
             <div style="text-align: center; padding: 20px;">
                 <h3 style="color: red;">⚠️ Ocorreu um erro!</h3>
-                <p>${erroSistema.message}</p>
+                <p>Verifique se o seu servidor Node.js está rodando no terminal (digite "node server.js").</p>
+                <p style="font-size: 12px; margin-top: 10px;">Detalhe: ${erroSistema.message}</p>
             </div>
         `;
     }
@@ -157,6 +140,7 @@ function exibirResultadosIA(dadosIA, textoPesquisa) {
     let motivo = dadosIA.motivo;
     let respostaMatematica = dadosIA.resultadoMatematica;
 
+    // Se a IA inventar uma categoria, joga pro geral
     if (!fontesMap[categoriaFinal]) {
         categoriaFinal = "geral";
     }
@@ -184,6 +168,7 @@ function exibirResultadosIA(dadosIA, textoPesquisa) {
         <hr style="margin: 15px 0; border: 1px solid #ddd;">
     `;
 
+    // Renderiza a Calculadora Inteligente se a IA mandou uma resposta
     if (respostaMatematica && respostaMatematica !== "null") {
         html += `
             <div class="card" style="border-left: 5px solid #007bff; background-color: #f0f8ff;">
@@ -197,6 +182,7 @@ function exibirResultadosIA(dadosIA, textoPesquisa) {
         <div style="display: flex; flex-direction: column; gap: 10px;">
     `;
 
+    // Renderiza os botões de link
     fontes.forEach(fonte => {
         let url;
         if (fonte.site.includes("youtube.com/results")) {
