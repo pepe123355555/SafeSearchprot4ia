@@ -1,5 +1,5 @@
 // ⚠️ ATENÇÃO: Coloque a sua chave de API do Google AI Studio aqui dentro das aspas!
-const API_KEY = "AIzaSyA_okjAsf_eB9CSFRpYonte-KxQp0pZXtw";
+const API_KEY = "Api-Key";
 
 // =========================
 // 🌐 SUAS FONTES + YOUTUBE ATUALIZADOS
